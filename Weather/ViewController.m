@@ -11,6 +11,7 @@
 @interface ViewController ()
 @property (nonatomic, strong)NSArray *detailArray;
 @property (nonatomic, strong)NSArray *weatherArray;
+@property (nonatomic, strong)NSIndexPath *indexPath;
 @property (weak, nonatomic) IBOutlet UILabel *lblDetailName;
 
 @end
@@ -32,11 +33,21 @@
                     [self.tableView reloadData];
                 }
                 failure:^(NSURLSessionDataTask * _Nullable task, NSError * _Nonnull error){}];
+    
+    if (self.detailArray)
+    {
+        [self.lblDetailName setText:
+         [NSString stringWithFormat:@"%@ / %@",
+          [[self.weatherArray objectAtIndex:self.indexPath.row] objectForKey:@"name"],
+          [[[self.weatherArray objectAtIndex:self.indexPath.row] objectForKey:@"sys"] objectForKey:@"country"]]];
+
+    }
 }
 
 - (void)didReceiveMemoryWarning {
     [super didReceiveMemoryWarning];
-    // Dispose of any resources that can be recreated.
+    
+    
 }
 
 - (NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section
@@ -72,5 +83,23 @@
     
     return cell;
 }
+
+- (void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath
+{
+    AFHTTPSessionManager *sessionManager = [[AFHTTPSessionManager alloc] initWithBaseURL:
+                                            [NSURL URLWithString:@"http://api.openweathermap.org/"]];
+    [sessionManager GET:@"data/2.5/forecast?"
+             parameters:@{@"id" : [NSString stringWithFormat:@"%@", [[self.weatherArray objectAtIndex:indexPath.row] objectForKey:@"id"]],
+                          @"appid" : @"a01d93cbe2de5a697d6e93104af0672b"}
+               progress:^(NSProgress * _Nonnull downloadProgress) { }
+                success:^(NSURLSessionDataTask * _Nonnull task, id  _Nullable responseObject)
+     {
+         self.detailArray = [[NSArray alloc] initWithArray:[responseObject objectForKey:@"list"]];
+         self.indexPath = indexPath;
+     }
+                failure:^(NSURLSessionDataTask * _Nullable task, NSError * _Nonnull error){}];
+}
+
+
 
 @end
